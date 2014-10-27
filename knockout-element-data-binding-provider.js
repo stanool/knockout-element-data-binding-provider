@@ -1,5 +1,5 @@
 (function() {
-	var DomDataBindingProvider = function () {
+    var DomDataBindingProvider = function () {
         /// <summary>Uses binding objects stored as data on DOM elements. Use setBinding on a DOM element or use the 
         /// setBindingByxxx helpers. 
 		/// An example binding object is, { 
@@ -15,6 +15,19 @@
         ///     } 
         /// }
 		/// </summary>
+        var extend = function (from, to) {
+            for (var prop in from) {
+                if (from.hasOwnProperty(prop)) {
+                    to[prop] = from[prop];
+                }
+            }
+        };
+
+        var extendBindingFromBindingAccessor = function (binding, bindingAccessor, bindingContext) {
+            var fromBinding = typeof bindingAccessor === 'function' ? bindingAccessor.call(bindingContext.$data) : bindingAccessor;
+            extend(fromBinding, binding);
+        };
+
         this.nodeHasBindings = function (node) {
             return !!ko.utils.domData.get(node, 'knockout-binding');
         };
