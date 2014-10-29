@@ -42,13 +42,37 @@
             return result;
         };
 
-        this.setBinding = function(elem, binding) {
-            extend(ko.utils.domData.get(elem, 'knockout-binding') || {}, binding);
-            ko.utils.domData.set(elem, 'knockout-binding', binding);
-            if (elem.addEventListener)
-                elem.addEventListener('DOMNodeRemoved', function() {
-                    ko.utils.domData.clear(elem);
-                });
+        this.setBinding = function (elem, binding) {
+            /// <summary>Attaches a binding to the data for an element
+            /// If called with a DOM element, applies the binding object to the element
+            /// Can also be called with an object whose keys are class or id selectors prefixed with '.' or '#' 
+            /// and whose values are the binding objects. 
+            /// In this case the second argument is optionally the container in which to restrict the search (only for bindings by class)
+            /// </summary>
+            // if called with the second argument then this is the actual binding to element method
+            if (typeof elem.nodeType === 'number' && typeof elem.nodeName === 'string') {
+                extend(ko.utils.domData.get(elem, 'knockout-binding') || {}, binding);
+                ko.utils.domData.set(elem, 'knockout-binding', binding);
+            } else {
+                // if not then we were passed a binding object whose properties are keys containing ids or classnames and values
+                // containing the binding for those ids/classes
+                var container = binding;
+                binding = elem;
+                for (var prop in elem) {
+                    if (binding.hasOwnProperty(prop)) {
+                        switch (prop[0]) {
+                            // class binding
+                            case '.':
+                                this.setBindingByClassName(prop.slice(1), binding[prop], container);
+                                break;
+                                // id binding
+                            case '#':
+                                this.setBindingById(prop.slice(1), binding[prop]);
+                                break;
+                        }
+                    }
+                }
+            }
         };
         
         this.setBindingByClassName = function (className, binding, container) {
@@ -69,7 +93,7 @@
         this.bindingProviders = Array.prototype.slice.call(arguments);
 
         this.nodeHasBindings = function(node) {
-            return this.bindingProviders.any(function(provider) {
+            return !!ko.utils.arrayFirst(this.bindingProviders, function(provider) {
                 return provider.nodeHasBindings(node);
             });
         };
